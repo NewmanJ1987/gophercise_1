@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -27,15 +28,26 @@ func main() {
 	problems := parseProblems(records)
 	score := 0
 	reader := bufio.NewReader(os.Stdin)
+	done := make(chan struct{})
 
-	for _, problem := range problems {
-		fmt.Printf("%s\n", problem.question)
-		input, _ := reader.ReadString('\n')
-		if problem.answer == strings.TrimSuffix(input, "\n") {
-			score++
+	go func() {
+		for _, problem := range problems {
+			fmt.Printf("%s\n", problem.question)
+			input, _ := reader.ReadString('\n')
+			if problem.answer == strings.TrimSuffix(input, "\n") {
+				score++
+			}
 		}
+		fmt.Printf("Your score is %d\n.", score)
+		close(done)
+	}()
+	select {
+	case <-done:
+		return
+	case <-time.After(5 * time.Second):
+		fmt.Println("Timed out.")
+		return
 	}
-	fmt.Printf("Your score is %d\n.", score)
 }
 
 type Problems struct {
